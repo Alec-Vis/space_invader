@@ -2,6 +2,8 @@ import pygame, sys
 import random
 import math
 
+from pygame import mixer
+
 """
     pygame learning project.
     note the coordinates of the display are always [0,0] in the top left corner of the window
@@ -16,6 +18,10 @@ screen = pygame.display.set_mode(screen_Size)
 
 # Background
 background = pygame.image.load(r'./assets/background_small.jpg')
+
+# Background sound
+mixer.music.load(r'.\assets\background.wav')
+mixer.music.play(-1)
 
 # Title and Icon
 # change the caption name on window
@@ -81,10 +87,16 @@ font = pygame.font.Font('freesansbold.ttf', 32)
 textX = 10 # maybe change these to be proportional to screen size
 textY = 10
 
+# Game over text
+gg_font = pygame.font.Font('freesansbold.ttf', 64)
+
 def show_score(x, y):
     score = font.render("score: " + str(score_value), True, (255,255,255)) #typcast score_value variable into string
     screen.blit(score, (x, y))
 
+def game_over_text():
+    gg_text = gg_font.render("Game Over", True, (255,255,255))
+    screen.blit(gg_text, (200, 250))
 
 def player(x, y):
     screen.blit(playerImg, (x, y))
@@ -139,6 +151,8 @@ while True:
                 playerXChange = 0.3
             if event.key == pygame.K_SPACE:
                 if BulletState == "ready":
+                    bullet_sound = mixer.Sound(r'.\assets\laser.wav')
+                    bullet_sound.play()
                     BulletX = playerX
                     FireBullet(BulletX, BulletY)
 
@@ -158,8 +172,17 @@ while True:
 
     # enemyX = [enemyX[i] + enemyXChange[i] for i in range(numOfEnemies)]
     for i in range(numOfEnemies):
+
+        # Game Over
+        if enemyY[i] > 440:
+            for j in range(numOfEnemies):
+                enemyY[j] = 2000
+            game_over_text()
+            break
+
         # Enemey Movement
         enemyX[i] += enemyXChange[i]
+
         # Boundry Check
         if enemyX[i] <= 0:  # TODO this section is not working after an enemey is hit by a bullet
             ''' Solved: The enemySpeed[i] method to alter the enemy speed, changed somehow and 
@@ -168,6 +191,7 @@ while True:
              solves the issue'''
             enemyXChange[i] = - enemySpeedX[i]
             enemyY[i] += enemyYChange[i]
+
         elif enemyX[i] >= 800 - playerImgSzX:  # use the full length of the image because the zero index is in TL
             enemyXChange[i] = -enemySpeedX[i]
             # print(enemySpeedX[i])
@@ -175,11 +199,13 @@ while True:
         # collision
         collision = isCollision(enemyX[i], enemyY[i], BulletX, BulletY)
         if collision:
+            collision_sound = mixer.Sound(r'.\assets\explosion.wav')
+            collision_sound.play()
             BulletY = 0.9 * screen_Size[1] - playerImgSzY * 0.5
             BulletState = "ready"
             score_value += 1
             enemyX[i] = random.randint(0, 735)
-            enemyY[i] = random.randint(50, 150)
+            enemyY[i] = random.randint(50, 100)
         # Enemy Image Rendering
         Enemy(enemyX[i], enemyY[i], i)
 
